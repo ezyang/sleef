@@ -1,4 +1,4 @@
-//          Copyright Naoki Shibata 2010 - 2018.
+//          Copyright Naoki Shibata 2010 - 2019.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -527,6 +527,13 @@ int main(int argc,char **argv)
 	printf(ISANAME " log2 arg=%.20g ulp=%.20g\n", d, u0);
 	fflush(stdout); ecnt++;
       }
+
+      double u1 = countULPdp(t = vget(xlog2_u35(vad), e), frx);
+      
+      if (u1 > 3.5) {
+	printf(ISANAME " log2_u35 arg=%.20g ulp=%.20g\n", d, u1);
+	fflush(stdout); ecnt++;
+      }
     }
 
     {
@@ -565,6 +572,13 @@ int main(int argc,char **argv)
 	printf(ISANAME " exp2 arg=%.20g ulp=%.20g\n", d, u0);
 	fflush(stdout); ecnt++;
       }
+
+      double u1 = countULPdp(t = vget(xexp2_u35(vd), e), frx);
+      
+      if (u1 > 3.5) {
+	printf(ISANAME " exp2_u35 arg=%.20g ulp=%.20g\n", d, u1);
+	fflush(stdout); ecnt++;
+      }
     }
     
     {
@@ -575,6 +589,13 @@ int main(int argc,char **argv)
       
       if (u0 > 1.09) {
 	printf(ISANAME " exp10 arg=%.20g ulp=%.20g\n", d, u0);
+	fflush(stdout); ecnt++;
+      }
+
+      double u1 = countULPdp(t = vget(xexp10_u35(vd), e), frx);
+      
+      if (u1 > 3.5) {
+	printf(ISANAME " exp10_u35 arg=%.20g ulp=%.20g\n", d, u1);
 	fflush(stdout); ecnt++;
       }
     }

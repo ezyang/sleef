@@ -1,4 +1,4 @@
-//          Copyright Naoki Shibata 2010 - 2017.
+//          Copyright Naoki Shibata 2010 - 2019.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -7,6 +7,8 @@
 
 #ifndef __MISC_H__
 #define __MISC_H__
+
+#include <stdint.h>
 
 #ifndef M_PI
 #define M_PI 3.141592653589793238462643383279502884
@@ -165,12 +167,57 @@ typedef struct {
 } Sleef_longdouble2;
 #endif
 
-#if defined(ENABLEFLOAT128) && !defined(Sleef_quad2_DEFINED)
-#define Sleef_quad2_DEFINED
+#if !defined(Sleef_quad_DEFINED)
+#define Sleef_quad_DEFINED
+#if defined(ENABLEFLOAT128)
 typedef __float128 Sleef_quad;
-typedef struct {
-  __float128 x, y;
+#else
+typedef struct { double x, y; } Sleef_quad;
+#endif
+#endif
+
+#if !defined(Sleef_quad1_DEFINED)
+#define Sleef_quad1_DEFINED
+typedef union {
+  struct {
+    Sleef_quad x;
+  };
+  Sleef_quad s[1];
+} Sleef_quad1;
+#endif
+
+#if !defined(Sleef_quad2_DEFINED)
+#define Sleef_quad2_DEFINED
+typedef union {
+  struct {
+    Sleef_quad x, y;
+  };
+  Sleef_quad s[2];
 } Sleef_quad2;
+#endif
+
+#if !defined(Sleef_quad4_DEFINED)
+#define Sleef_quad4_DEFINED
+typedef union {
+  struct {
+    Sleef_quad x, y, z, w;
+  };
+  Sleef_quad s[4];
+} Sleef_quad4;
+#endif
+
+#if !defined(Sleef_quad8_DEFINED)
+#define Sleef_quad8_DEFINED
+typedef union {
+  Sleef_quad s[8];
+} Sleef_quad8;
+#endif
+
+#if defined(__ARM_FEATURE_SVE) && !defined(Sleef_quadx_DEFINED)
+#define Sleef_quadx_DEFINED
+typedef union {
+  Sleef_quad s[32];
+} Sleef_quadx;
 #endif
 
 //
@@ -181,12 +228,7 @@ typedef struct {
 #define UNLIKELY(condition) __builtin_expect(!!(condition), 0)
 #define RESTRICT __restrict__
 
-#ifndef __ARM_FEATURE_SVE
 #define INLINE __attribute__((always_inline))
-#else
-// This is a workaround of a bug in armclang
-#define INLINE
-#endif
 
 #ifndef __arm__
 #define ALIGNED(x) __attribute__((aligned(x)))

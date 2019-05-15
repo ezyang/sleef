@@ -1,5 +1,5 @@
 /*********************************************************************/
-/*          Copyright ARM Ltd. 2010 - 2017.                          */
+/*          Copyright ARM Ltd. 2010 - 2019.                          */
 /* Distributed under the Boost Software License, Version 1.0.        */
 /*    (See accompanying file LICENSE.txt or copy at                  */
 /*          http://www.boost.org/LICENSE_1_0.txt)                    */
@@ -44,6 +44,10 @@ typedef int32x4_t vint2;
 // Double precision definitions
 typedef float64x2_t vdouble;
 typedef int32x2_t vint;
+
+typedef struct {
+  vmask x, y;
+} vmask2;
 
 #define DFTPRIORITY 10
 
@@ -148,23 +152,28 @@ static INLINE VECTOR_CC vfloat vdiv_vf_vf_vf(vfloat n, vfloat d) {
 }
 static INLINE VECTOR_CC vfloat vsqrt_vf_vf(vfloat d) { return vsqrtq_f32(d); }
 
+// |x|, -x
+static INLINE VECTOR_CC vfloat vabs_vf_vf(vfloat f) { return vabsq_f32(f); }
+static INLINE VECTOR_CC vfloat vneg_vf_vf(vfloat f) { return vnegq_f32(f); }
+
 #if CONFIG == 1
 // Multiply accumulate: z = z + x * y
 static INLINE VECTOR_CC vfloat vmla_vf_vf_vf_vf(vfloat x, vfloat y, vfloat z) {
   return vfmaq_f32(z, x, y);
 }
-// Multiply subtract: z = z = x * y
+// Multiply subtract: z = z - x * y
 static INLINE VECTOR_CC vfloat vmlanp_vf_vf_vf_vf(vfloat x, vfloat y, vfloat z) {
   return vfmsq_f32(z, x, y);
+}
+// Multiply subtract: z = x * y - z
+static INLINE VECTOR_CC vfloat vmlapn_vf_vf_vf_vf(vfloat x, vfloat y, vfloat z) {
+  return vneg_vf_vf(vfmsq_f32(z, x, y));
 }
 #else
 static INLINE VECTOR_CC vfloat vmla_vf_vf_vf_vf(vfloat x, vfloat y, vfloat z) { return vadd_vf_vf_vf(vmul_vf_vf_vf(x, y), z); }
 static INLINE VECTOR_CC vfloat vmlanp_vf_vf_vf_vf(vfloat x, vfloat y, vfloat z) { return vsub_vf_vf_vf(z, vmul_vf_vf_vf(x, y)); }
+static INLINE VECTOR_CC vfloat vmlapn_vf_vf_vf_vf(vfloat x, vfloat y, vfloat z) { return vsub_vf_vf_vf(vmul_vf_vf_vf(x, y), z); }
 #endif
-
-// |x|, -x
-static INLINE VECTOR_CC vfloat vabs_vf_vf(vfloat f) { return vabsq_f32(f); }
-static INLINE VECTOR_CC vfloat vneg_vf_vf(vfloat f) { return vnegq_f32(f); }
 
 // max, min
 static INLINE VECTOR_CC vfloat vmax_vf_vf_vf(vfloat x, vfloat y) {
@@ -644,3 +653,80 @@ static INLINE VECTOR_CC void vsscatter2_v_p_i_i_vf(float *ptr, int offset, int s
   vst1_f32((float *)(ptr+(offset + step * 0)*2), vget_low_f32(v));
   vst1_f32((float *)(ptr+(offset + step * 1)*2), vget_high_f32(v));
 }
+
+//
+
+typedef Sleef_quad2 vargquad;
+
+static INLINE vmask2 vinterleave_vm2_vm2(vmask2 v) {
+  return (vmask2) {
+    vreinterpretq_u32_u64(vtrn1q_u64(vreinterpretq_u64_u32(v.x), vreinterpretq_u64_u32(v.y))),
+    vreinterpretq_u32_u64(vtrn2q_u64(vreinterpretq_u64_u32(v.x), vreinterpretq_u64_u32(v.y))) };
+}
+
+static INLINE vmask2 vuninterleave_vm2_vm2(vmask2 v) {
+  return (vmask2) {
+    vreinterpretq_u32_u64(vtrn1q_u64(vreinterpretq_u64_u32(v.x), vreinterpretq_u64_u32(v.y))),
+    vreinterpretq_u32_u64(vtrn2q_u64(vreinterpretq_u64_u32(v.x), vreinterpretq_u64_u32(v.y))) };
+}
+
+static INLINE vint vuninterleave_vi_vi(vint v) { return v; }
+static INLINE vdouble vinterleave_vd_vd(vdouble vd) { return vd; }
+static INLINE vdouble vuninterleave_vd_vd(vdouble vd) { return vd; }
+static INLINE vmask vinterleave_vm_vm(vmask vm) { return vm; }
+static INLINE vmask vuninterleave_vm_vm(vmask vm) { return vm; }
+
+static vmask2 vloadu_vm2_p(void *p) {
+  vmask2 vm2 = {
+    vld1q_u32((uint32_t *)p),
+    vld1q_u32((uint32_t *)((uint8_t *)p + sizeof(vmask)))
+  };
+  return vm2;
+}
+
+static INLINE vmask2 vcast_vm2_aq(vargquad aq) {
+  union {
+    vargquad aq;
+    vmask2 vm2;
+  } c;
+  c.aq = aq;
+  return vinterleave_vm2_vm2(c.vm2);
+}
+
+static INLINE vargquad vcast_aq_vm2(vmask2 vm2) {
+  union {
+    vargquad aq;
+    vmask2 vm2;
+  } c;
+  c.vm2 = vuninterleave_vm2_vm2(vm2);
+  return c.aq;
+}
+
+static INLINE int vtestallzeros_i_vo64(vopmask g) {
+  uint32x2_t x0 = vorr_u32(vget_low_u32(g), vget_high_u32(g));
+  uint32x2_t x1 = vpmax_u32(x0, x0);
+  return ~vget_lane_u32(x1, 0);
+}
+
+static INLINE vmask vsel_vm_vo64_vm_vm(vopmask m, vmask x, vmask y) { return vbslq_u32(m, x, y); }
+
+static INLINE vmask vsub64_vm_vm_vm(vmask x, vmask y) {
+  return vreinterpretq_u32_s64(vsubq_s64(vreinterpretq_s64_u32(x), vreinterpretq_s64_u32(y)));
+}
+
+static INLINE vmask vneg64_vm_vm(vmask x) {
+  return vreinterpretq_u32_s64(vnegq_s64(vreinterpretq_s64_u32(x)));
+}
+
+static INLINE vopmask vgt64_vo_vm_vm(vmask x, vmask y) {
+  return vreinterpretq_u32_u64(vcgtq_s64(vreinterpretq_s64_u32(x), vreinterpretq_s64_u32(y)));
+}
+
+#define vsll64_vm_vm_i(x, c) vreinterpretq_u32_u64(vshlq_n_u64(vreinterpretq_u64_u32(x), c))
+#define vsrl64_vm_vm_i(x, c) vreinterpretq_u32_u64(vshrq_n_u64(vreinterpretq_u64_u32(x), c))
+
+static INLINE vmask vcast_vm_vi(vint vi) {
+  vmask m = vreinterpretq_u32_u64(vmovl_u32(vreinterpret_u32_s32(vi)));
+  return vor_vm_vm_vm(vcast_vm_vi2(vcastu_vi2_vi(vreinterpret_s32_u32(vget_low_u32(vgt_vo_vi_vi(vcast_vi_i(0), vi))))), m);
+}
+static INLINE vint vcast_vi_vm(vmask vm) { return vreinterpret_s32_u32(vmovn_u64(vreinterpretq_u64_u32(vm))); }

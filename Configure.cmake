@@ -61,7 +61,8 @@ set(SLEEF_SUPPORTED_GNUABI_EXTENSIONS
   SSE2 AVX AVX2 AVX512F ADVSIMD SVE
   CACHE STRING "List of SIMD architectures supported by libsleef for GNU ABI."
 )
-
+set(SLEEFQUAD_SUPPORTED_EXT
+  PUREC_SCALAR PURECFMA_SCALAR SSE2 AVX FMA4 AVX2 AVX512F ADVSIMD SVE)
 # Force set default build type if none was specified
 # Note: some sleef code requires the optimisation flags turned on
 if(NOT CMAKE_BUILD_TYPE)
@@ -148,8 +149,6 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
 
   command_arguments(ALIAS_PARAMS_ADVSIMD_DP  2 float64x2_t int32x2_t n advsimd)
   command_arguments(ALIAS_PARAMS_ADVSIMD_SP -4 float32x4_t int32x4_t n advsimd)
-
-  set(CLANG_FLAGS_ENABLE_PURECFMA_SCALAR "-march=armv8-a+simd")
 
   set(TESTER3_DEFINITIONS_ADVSIMD       ATR=finz_ DPTYPE=float64x2_t SPTYPE=float32x4_t DPTYPESPEC=d2 SPTYPESPEC=f4 EXTSPEC=advsimd)
   set(TESTER3_DEFINITIONS_ADVSIMDNOFMA  ATR=cinz_ DPTYPE=float64x2_t SPTYPE=float32x4_t DPTYPESPEC=d2 SPTYPESPEC=f4 EXTSPEC=advsimdnofma)
@@ -278,8 +277,6 @@ set(CLANG_FLAGS_ENABLE_AVX512FNOFMA "-mavx512f")
 set(CLANG_FLAGS_ENABLE_NEON32 "--target=arm-linux-gnueabihf;-mcpu=cortex-a8")
 set(CLANG_FLAGS_ENABLE_NEON32VFPV4 "-march=armv7-a;-mfpu=neon-vfpv4")
 # Arm AArch64 vector extensions.
-set(CLANG_FLAGS_ENABLE_ADVSIMD "-march=armv8-a+simd")
-set(CLANG_FLAGS_ENABLE_ADVSIMDNOFMA "-march=armv8-a+simd")
 set(CLANG_FLAGS_ENABLE_SVE "-march=armv8-a+sve")
 set(CLANG_FLAGS_ENABLE_SVENOFMA "-march=armv8-a+sve")
 # PPC64
@@ -331,8 +328,8 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "Intel")
   set(FLAGS_ENABLE_AVX512F "-xCOMMON-AVX512")
   set(FLAGS_ENABLE_AVX512FNOFMA "-xCOMMON-AVX512")
   set(FLAGS_ENABLE_PURECFMA_SCALAR "-march=core-avx2")
-  set(FLAGS_STRICTMATH "-fp-model strict -Qoption,cpp,--extended_float_type -qoverride-limits")
-  set(FLAGS_FASTMATH "-fp-model fast=2 -Qoption,cpp,--extended_float_type -qoverride-limits")
+  set(FLAGS_STRICTMATH "-fp-model strict -Qoption,cpp,--extended_float_type")
+  set(FLAGS_FASTMATH "-fp-model fast=2 -Qoption,cpp,--extended_float_type")
   set(FLAGS_WALL "-fmax-errors=3 -Wall -Wno-unused -Wno-attributes")
   set(FLAGS_NO_ERRNO "")
 endif()

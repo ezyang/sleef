@@ -1,4 +1,4 @@
-//          Copyright Naoki Shibata 2010 - 2017.
+//          Copyright Naoki Shibata 2010 - 2019.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
     exit(-1);
   }
 
-  static char *ulpSuffixStr[] = { "", "_u1", "_u05", "_u35", "_u15" };
+  static char *ulpSuffixStr[] = { "", "_u1", "_u05", "_u35", "_u15", "_u3500" };
   
   if (argc == 4 || argc == 5) {
     char *atrPrefix = strcmp(argv[1], "-") == 0 ? "" : argv[1];
@@ -337,13 +337,17 @@ int main(int argc, char **argv) {
                    vectorcc);
 	  }
 	  break;
+	  // The two cases below should not use vector calling convention.
+	  // They do not have vector type as argument or return value.
+	  // Also, the corresponding definition (`getPtr` and `getInt`) in `sleefsimd*.c`
+	  // are not defined with `VECTOR_CC`. (Same for single precision case below)
 	case 7:
-	  printf("IMPORT CONST int Sleef_%sd%s%s%s(int)%s;\n",
-		 funcList[i].name, wdp, isaub, isaname, vectorcc);
+	  printf("IMPORT CONST int Sleef_%sd%s%s%s(int);\n",
+		 funcList[i].name, wdp, isaub, isaname);
 	  break;
 	case 8:
-	  printf("IMPORT CONST void *Sleef_%sd%s%s%s(int)%s;\n",
-                 funcList[i].name, wdp, isaub, isaname, vectorcc);
+	  printf("IMPORT CONST void *Sleef_%sd%s%s%s(int);\n",
+                 funcList[i].name, wdp, isaub, isaname);
 	  break;
 	}
       }
@@ -495,21 +499,19 @@ int main(int argc, char **argv) {
                  vectorcc);
 	}
 	break;
+	// The two cases below should not use vector calling convention.
+	// See comments for double precision case above.
       case 7:
-	printf("IMPORT CONST int Sleef_%sf%s%s%s(int)%s;\n",
-	       funcList[i].name, wsp, isaub, isaname,
-               vectorcc);
-	printf("IMPORT CONST int Sleef_%s%sf%s%s%s(int)%s;\n",
-	       atrPrefix, funcList[i].name, wsp, isaub, isaname,
-               vectorcc);
+	printf("IMPORT CONST int Sleef_%sf%s%s%s(int);\n",
+	       funcList[i].name, wsp, isaub, isaname);
+	printf("IMPORT CONST int Sleef_%s%sf%s%s%s(int);\n",
+	       atrPrefix, funcList[i].name, wsp, isaub, isaname);
 	break;
       case 8:
-	printf("IMPORT CONST void *Sleef_%sf%s%s%s(int)%s;\n",
-	       funcList[i].name, wsp, isaub, isaname,
-               vectorcc);
-	printf("IMPORT CONST void *Sleef_%s%sf%s%s%s(int)%s;\n",
-	       atrPrefix, funcList[i].name, wsp, isaub, isaname,
-               vectorcc);
+	printf("IMPORT CONST void *Sleef_%sf%s%s%s(int);\n",
+	       funcList[i].name, wsp, isaub, isaname);
+	printf("IMPORT CONST void *Sleef_%s%sf%s%s%s(int);\n",
+	       atrPrefix, funcList[i].name, wsp, isaub, isaname);
 	break;
       }
     }

@@ -1,7 +1,9 @@
 # Options
 
 option(BUILD_SHARED_LIBS "Build shared libs" ON)
+option(BUILD_LIBM "libsleef will be built." ON)
 option(BUILD_DFT "libsleefdft will be built." ON)
+option(BUILD_QUAD "libsleefquad will be built." OFF)
 option(BUILD_GNUABI_LIBS "libsleefgnuabi will be built." ON)
 option(BUILD_TESTS "Tests will be built." ON)
 
@@ -21,8 +23,8 @@ endif()
 enable_testing()
 
 set(SLEEF_VERSION_MAJOR 3)
-set(SLEEF_VERSION_MINOR 3)
-set(SLEEF_VERSION_PATCHLEVEL 1)
+set(SLEEF_VERSION_MINOR 4)
+set(SLEEF_VERSION_PATCHLEVEL 0)
 set(SLEEF_VERSION ${SLEEF_VERSION_MAJOR}.${SLEEF_VERSION_MINOR}.${SLEEF_VERSION_PATCHLEVEL})
 set(SLEEF_SOVERSION ${SLEEF_VERSION_MAJOR})
 
